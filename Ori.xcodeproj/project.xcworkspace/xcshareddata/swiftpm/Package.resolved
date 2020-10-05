@@ -1,0 +1,52 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Alamofire",
+        "repositoryURL": "https://github.com/Alamofire/Alamofire.git",
+        "state": {
+          "branch": null,
+          "revision": "becd9a729a37bdbef5bc39dc3c702b99f9e3d046",
+          "version": "5.2.2"
+        }
+      },
+      {
+        "package": "Neumorphic",
+        "repositoryURL": "https://github.com/costachung/neumorphic",
+        "state": {
+          "branch": null,
+          "revision": "2ab34ef079654f2cfc7a33f56c3cfaef34d3f550",
+          "version": "1.2.1"
+        }
+      },
+      {
+        "package": "ShellOut",
+        "repositoryURL": "https://github.com/Helloyunho/ShellOut",
+        "state": {
+          "branch": null,
+          "revision": "fc5603a33fd6918febabbe1adfa3116ea72579f8",
+          "version": "2.4.0"
+        }
+      },
+      {
+        "package": "StringMetric",
+        "repositoryURL": "https://github.com/autozimu/StringMetric.swift",
+        "state": {
+          "branch": null,
+          "revision": "ac08419f609e53636bd2d5d140d95d1d14960d6a",
+          "version": "0.3.2"
+        }
+      },
+      {
+        "package": "SwiftyJSON",
+        "repositoryURL": "https://github.com/SwiftyJSON/SwiftyJSON.git",
+        "state": {
+          "branch": null,
+          "revision": "2b6054efa051565954e1d2b9da831680026cd768",
+          "version": "5.0.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
