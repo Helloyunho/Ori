@@ -26,7 +26,7 @@ Download Apple Music songs via YouTube!
 ## Known issues
 
 - Preformance is kinda slower than I expected
-- Sometimes youtube-dl fails because of metadata error (Will be fixed by using swift to add metadata)
+- ~~Sometimes youtube-dl fails because of metadata error (Will be fixed by using swift to add metadata)~~ Fixed from v0.2
 
 ## Screenshots
 
