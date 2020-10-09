@@ -14,6 +14,7 @@ struct SongDownloadItem: View {
 	var artwork: NSImage?
 	var finished: Bool = false
 	var error: Bool = false
+  var warning: Bool = false
 	@Environment(\.colorScheme) var colorScheme: ColorScheme
 	var body: some View {
 		Neumorphic.shared.colorScheme = colorScheme
@@ -57,7 +58,14 @@ struct SongDownloadItem: View {
 					.frame(width: 16, height: 16)
 					.foregroundColor(Color.green)
 					.padding()
-			} else {
+      } else if warning {
+        Image(systemName: "exclamationmark.triangle")
+          .resizable()
+          .scaledToFit()
+          .frame(width: 16, height: 16)
+          .foregroundColor(Color.orange)
+          .padding()
+      } else {
 				ProgressView()
 					.progressViewStyle(CircularProgressViewStyle())
 					.frame(width: 16, height: 16)

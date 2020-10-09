@@ -38,7 +38,7 @@ struct SongDownloadView: View {
 					ScrollView(showsIndicators: false) {
 						LazyVStack {
 							ForEach (selectedSongs, id: \.self) { song in
-								SongDownloadItem(title: song.mediaItem.title, artist: song.mediaItem.artist?.name, artwork: song.mediaItem.artwork?.image, finished: songsState[song] == .finished, error: songsState[song] == .error, colorScheme: _colorScheme)
+                SongDownloadItem(title: song.mediaItem.title, artist: song.mediaItem.artist?.name, artwork: song.mediaItem.artwork?.image, finished: songsState[song] == .finished, error: songsState[song] == .error, warning: songsState[song] == .warning, colorScheme: _colorScheme)
 									.background(primaryColor)
 							}
 						}

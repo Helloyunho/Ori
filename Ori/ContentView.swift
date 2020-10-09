@@ -23,19 +23,19 @@ struct ContentView: View {
 	var body: some View {
 		if viewIndex == 0 {
 			PlaylistSelectionView(playlists: playlists, selectedPlaylist: $selectedPlaylist, viewIndex: $viewIndex)
-				.transition(AnyTransition.move(edge: .leading)).animation(.default)
+				.transition(AnyTransition.slide).animation(.easeInOut)
 		} else if viewIndex == 1 {
 			SongSelectionView(songs: playlists[selectedPlaylist].items.map({ item in SongDownloadElement(mediaItem: item) }), selectedSongs: $selectedSongs, pathString: $downloadPath, viewIndex: $viewIndex)
-				.transition(AnyTransition.move(edge: .leading)).animation(.default)
+				.transition(AnyTransition.slide).animation(.easeInOut)
 		} else if viewIndex == 2 {
 			SongVerifyView(selectedSongs: selectedSongs, viewIndex: $viewIndex)
-				.transition(AnyTransition.move(edge: .leading)).animation(.default)
+				.transition(AnyTransition.slide).animation(.easeInOut)
 		} else if viewIndex == 3 {
 			SongDownloadView(selectedSongs: selectedSongs, downloadPath: downloadPath, viewIndex: $viewIndex)
-				.transition(AnyTransition.move(edge: .leading)).animation(.default)
+        .transition(AnyTransition.slide).animation(.easeInOut)
 		} else if viewIndex == 4 {
 			FinishedView()
-				.transition(AnyTransition.move(edge: .leading)).animation(.default)
+				.transition(AnyTransition.slide).animation(.easeInOut)
 		} else {
 			EasterEggView()
 		}

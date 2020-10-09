@@ -16,6 +16,7 @@ enum DownloadState {
 	case downloading
 	case finished
 	case error
+  case warning
 }
 
 class SongDownloadElement: Hashable {
@@ -86,13 +87,158 @@ class SongDownloadElement: Hashable {
 
 		self.getMostRelatedVideoID(query: query) { [weak self] videoIDnotSure in
 			if let videoID = videoIDnotSure {
+        let savePathWithoutExt = "\(downloadPath)/\(query.replacingOccurrences(of: "\"", with: "\\\""))"
 				do {
-					let result = try shellOut(to: "export PATH=\"/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/usr/local/bin\" && youtube-dl -x --add-metadata --embed-thumbnail --audio-format \(format) -o \"\(downloadPath)/\(query.replacingOccurrences(of: "\"", with: "\\\"")).%(ext)s\" https://youtu.be/\(videoID)")
+          let args = [
+            "youtube-dl",
+            "-x",
+            "--audio-format",
+            "\(format)",
+            " -o",
+            "\"\(savePathWithoutExt)_temp.%(ext)s\"",
+            "https://youtu.be/\(videoID)"
+          ]
+          let result = try shellOut(to: "export PATH=\"/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/usr/local/bin\" && \(args.joined(separator: " "))")
 					LOGGER.debug("\(result)")
-					self?.downloadState = .finished
-					DispatchQueue.main.async {
-						callback(true)
-					}
+          let tempMusicPath = URL(fileURLWithPath: "\(savePathWithoutExt)_temp.\(format)")
+          var isArtworkPossible = false
+          var isArtworkSuccess = false
+          if format == "mp3", let artwork = self?.mediaItem.artwork {
+            if let artworkData = artwork.imageData {
+              var formatRecognizable = true
+              var imageFormatAsExt = ""
+              switch (artwork.imageDataFormat) {
+              case .none:
+                formatRecognizable = false
+              case .bitmap:
+                imageFormatAsExt = ".bmp"
+              case .JPEG:
+                imageFormatAsExt = ".jpg"
+              case .JPEG2000:
+                imageFormatAsExt = ".jpg"
+              case .GIF:
+                imageFormatAsExt = ".gif"
+              case .PNG:
+                imageFormatAsExt = ".png"
+              case .TIFF:
+                imageFormatAsExt = ".tiff"
+              case .PICT:
+                imageFormatAsExt = ".pict"
+              case .BMP:
+                imageFormatAsExt = ".bmp"
+              @unknown default:
+                formatRecognizable = false
+              }
+              
+              if formatRecognizable {
+                isArtworkPossible = true
+                do {
+                  let artworkURL = URL(fileURLWithPath: "\(savePathWithoutExt)_temp.\(imageFormatAsExt)")
+                  try artworkData.write(to: artworkURL)
+                  let args = [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    "\"\(savePathWithoutExt)_temp.\(format)\"",
+                    "-i",
+                    "\"\(savePathWithoutExt)_temp.\(imageFormatAsExt)\"",
+                    "-c",
+                    "copy",
+                    "-map",
+                    "0",
+                    "-map",
+                    "1",
+                    "-metadata:s:v",
+                    "title=\"Album cover\"",
+                    "-metadata:s:v",
+                    "comment=\"Cover (front)\"",
+                    "\"\(savePathWithoutExt)_temp_artwork.\(format)\""
+                  ]
+                  do {
+                    let result = try shellOut(to: "export PATH=\"/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/usr/local/bin\" && \(args.joined(separator: " "))")
+                    LOGGER.debug("\(result)")
+                    isArtworkSuccess = true
+                    try? FileManager.default.removeItem(at: artworkURL)
+                    try? FileManager.default.removeItem(at: tempMusicPath)
+                  } catch {
+                    let error = error as! ShellOutError
+                    LOGGER.error("FFmpeg Error while applying artwork: \(error.message)")
+                    try? FileManager.default.removeItem(at: artworkURL)
+                  }
+                } catch {
+                  LOGGER.error("Artwork Data Saving Error: \(String(describing: error))")
+                }
+              }
+            }
+          }
+          do {
+            var args = [
+              "ffmpeg",
+              "-y",
+              "-i",
+              isArtworkSuccess ? "\"\(savePathWithoutExt)_temp_artwork.\(format)\"" : "\"\(savePathWithoutExt)_temp.\(format)\""
+            ]
+
+            if format == "m4a" {
+              args.append(contentsOf: ["-vn", "-acodec", "copy"])
+            } else {
+              args.append(contentsOf: ["-c", "copy"])
+            }
+            
+            if let title = self?.mediaItem.title {
+              args.append(contentsOf: ["-metadata", "title=\"\(title.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let artist = self?.mediaItem.artist?.name {
+              args.append(contentsOf: ["-metadata", "author=\"\(artist.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let albumArtist = self?.mediaItem.album.albumArtist {
+              args.append(contentsOf: ["-metadata", "album_artist=\"\(albumArtist.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let album = self?.mediaItem.album.title {
+              args.append(contentsOf: ["-metadata", "album=\"\(album.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let grouping = self?.mediaItem.grouping {
+              args.append(contentsOf: ["-metadata", "grouping=\"\(grouping.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let composer = self?.mediaItem.composer {
+              args.append(contentsOf: ["-metadata", "composer=\"\(composer.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let year = self?.mediaItem.year {
+              args.append(contentsOf: ["-metadata", "year=\"\(year)\""])
+            }
+            if let track = self?.mediaItem.trackNumber {
+              args.append(contentsOf: ["-metadata", "track=\"\(track)\""])
+            }
+            if let comment = self?.mediaItem.comments {
+              args.append(contentsOf: ["-metadata", "comment=\"\(comment.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let genre = self?.mediaItem.genre {
+              args.append(contentsOf: ["-metadata", "genre=\"\(genre.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            if let description = self?.mediaItem.description {
+              args.append(contentsOf: ["-metadata", "description=\"\(description.replacingOccurrences(of: "\"", with: "\\\""))\""])
+            }
+            args.append("\"\(savePathWithoutExt).\(format)\"")
+            let result = try shellOut(to: "export PATH=\"/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin:/Library/Apple/usr/bin:/usr/local/bin\" && \(args.joined(separator: " "))")
+            LOGGER.debug("\(result)")
+            try? FileManager.default.removeItem(at: tempMusicPath)
+            if isArtworkSuccess {
+              let tempArtworkMusicFile = URL(fileURLWithPath: "\(savePathWithoutExt)_temp_artwork.\(format)")
+              try? FileManager.default.removeItem(at: tempArtworkMusicFile)
+            }
+            self?.downloadState = (isArtworkPossible && !isArtworkSuccess) ? .warning : .finished
+            DispatchQueue.main.async {
+              callback(true)
+            }
+          } catch {
+            let error = error as! ShellOutError
+            LOGGER.error("FFmpeg Error: \(error.message)")
+            self?.downloadState = .error
+            DispatchQueue.main.async {
+              callback(false)
+            }
+            return
+          }
 				} catch {
 					let error = error as! ShellOutError
 					LOGGER.error("Youtube dl Error: \(error.message)")
@@ -100,6 +246,7 @@ class SongDownloadElement: Hashable {
 					DispatchQueue.main.async {
 						callback(false)
 					}
+          return
 				}
 			} else {
 				LOGGER.error("videoID Not Found")
@@ -107,6 +254,7 @@ class SongDownloadElement: Hashable {
 				DispatchQueue.main.async {
 					callback(false)
 				}
+        return
 			}
 		}
 	}
